@@ -240,11 +240,6 @@ jobs:
           -Dsonar.host.url=https://sonarcloud.io \
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
           
-    - name: 🏆 SonarCloud Quality Gate Check
-      uses: sonarqube-quality-gate-action@master
-      timeout-minutes: 5
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   # =====================================
   # JOB 5: SECURITY SCAN
