@@ -9,6 +9,12 @@ on:
     # Ejecutar pruebas nocturnas a las 2 AM UTC
     - cron: '0 2 * * *'
 
+# Permisos necesarios para el security scanning
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 env:
   JAVA_VERSION: '11'
   MAVEN_OPTS: -Dmaven.repo.local=.m2/repository
@@ -28,13 +34,13 @@ jobs:
         fetch-depth: 0  # Needed for SonarCloud
         
     - name: ☕ Setup Java JDK
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
         
     - name: 📦 Cache Maven Dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.m2/repository
@@ -68,7 +74,7 @@ jobs:
         reporter: java-junit
         
     - name: 💾 Cache Test Results for SonarCloud
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           target/surefire-reports/
@@ -88,13 +94,13 @@ jobs:
       uses: actions/checkout@v4
       
     - name: ☕ Setup Java JDK
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
         
     - name: 📦 Restore Maven Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.m2/repository
@@ -109,14 +115,14 @@ jobs:
         mvn test -Dtest=UsuarioSeleniumTest -Dmaven.test.failure.ignore=true
         
     - name: 📸 Upload Screenshots (on failure)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: selenium-screenshots
         path: target/screenshots/
         
     - name: 📤 Upload Selenium Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: selenium-test-results
@@ -135,13 +141,13 @@ jobs:
       uses: actions/checkout@v4
       
     - name: ☕ Setup Java JDK
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
         
     - name: 📦 Restore Maven Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.m2/repository
@@ -167,7 +173,7 @@ jobs:
           -e -o /results/html-report
           
     - name: 📊 Upload JMeter Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: jmeter-results
@@ -176,7 +182,7 @@ jobs:
           target/jmeter/html-report/
           
     - name: 📈 Upload Performance Test Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: performance-test-results
@@ -197,20 +203,20 @@ jobs:
         fetch-depth: 0  # Disable shallow clone for better analysis
         
     - name: ☕ Setup Java JDK
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
         
     - name: 📦 Cache SonarCloud Packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.sonar/cache
         key: ${{ runner.os }}-sonar
         restore-keys: ${{ runner.os }}-sonar
         
     - name: 📦 Restore Maven Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.m2/repository
@@ -218,7 +224,7 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
         
     - name: 💾 Restore Test Results
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           target/surefire-reports/
@@ -239,7 +245,6 @@ jobs:
           -Dsonar.organization=${{ github.repository_owner }} \
           -Dsonar.host.url=https://sonarcloud.io \
           -Dsonar.token=${{ secrets.SONAR_TOKEN }}
-          
 
   # =====================================
   # JOB 5: SECURITY SCAN
@@ -247,6 +252,10 @@ jobs:
   security-scan:
     name: 🛡️ Security Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     
     steps:
     - name: 📥 Checkout Repository
@@ -261,10 +270,11 @@ jobs:
         output: 'trivy-results.sarif'
         
     - name: 📤 Upload Trivy Scan Results to GitHub Security
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
+        category: 'trivy-scan'
 
   # =====================================
   # JOB 6: BUILD Y PACKAGE
@@ -286,7 +296,7 @@ jobs:
         distribution: 'temurin'
         
     - name: 📦 Restore Maven Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.m2/repository
