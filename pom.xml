@@ -1,0 +1,205 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.ejemplo</groupId>
+    <artifactId>healthtrack</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>HealthTrack Testing Project</name>
+    <description>Proyecto de automatización de pruebas para HealthTrack</description>
+
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        
+        <!-- Versiones de dependencias -->
+        <junit.version>5.9.2</junit.version>
+        <selenium.version>4.15.0</selenium.version>
+        <webdrivermanager.version>5.6.2</webdrivermanager.version>
+        <assertj.version>3.24.2</assertj.version>
+        <jacoco.version>0.8.11</jacoco.version>
+        <surefire.version>3.2.2</surefire.version>
+        <!-- SonarCloud -->
+        <sonar.projectKey>tu-usuario_healthtrack-testing</sonar.projectKey>
+        <sonar.organization>tu-organizacion</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    </properties>
+
+    <dependencies>
+        <!-- JUnit 5 para pruebas unitarias -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Selenium WebDriver para pruebas funcionales -->
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
+            <version>${selenium.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- WebDriverManager para gestión automática de drivers -->
+        <dependency>
+            <groupId>io.github.bonigarcia</groupId>
+            <artifactId>webdrivermanager</artifactId>
+            <version>${webdrivermanager.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- AssertJ para mejores assertions -->
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Mockito para mocks en pruebas -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.7.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Mockito JUnit Jupiter -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.7.0</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Plugin de compilación -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>11</source>
+                    <target>11</target>
+                </configuration>
+            </plugin>
+
+            <!-- Plugin Surefire para ejecutar pruebas -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire.version}</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
+                    </includes>
+                </configuration>
+            </plugin>
+
+            <!-- Plugin JaCoCo para cobertura de código -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>PACKAGE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- SonarCloud plugin -->
+          <plugin>
+              <groupId>org.sonarsource.scanner.maven</groupId>
+              <artifactId>sonar-maven-plugin</artifactId>
+              <version>3.10.0.2594</version>
+          </plugin>
+          <!-- JMeter Maven Plugin -->
+<plugin>
+    <groupId>com.lazerycode.jmeter</groupId>
+    <artifactId>jmeter-maven-plugin</artifactId>
+    <version>3.8.0</version>
+    <executions>
+        <execution>
+            <id>configuration</id>
+            <goals>
+                <goal>configure</goal>
+            </goals>
+        </execution>
+        <execution>
+            <id>jmeter-tests</id>
+            <goals>
+                <goal>jmeter</goal>
+            </goals>
+        </execution>
+        <execution>
+            <id>jmeter-check-results</id>
+            <goals>
+                <goal>results</goal>
+            </goals>
+        </execution>
+    </executions>
+    <configuration>
+        <!-- Directorio de planes de prueba -->
+        <testFilesDirectory>src/test/jmeter</testFilesDirectory>
+        
+        <!-- Directorio de resultados -->
+        <resultsDirectory>target/jmeter/results</resultsDirectory>
+        
+        <!-- Generar reportes HTML -->
+        <generateReports>true</generateReports>
+        
+        <!-- Configuración adicional -->
+        <jmeterVersion>5.6.2</jmeterVersion>
+        
+        <!-- Propiedades personalizadas -->
+        <propertiesUser>
+            <jmeter.save.saveservice.output_format>xml</jmeter.save.saveservice.output_format>
+            <jmeter.save.saveservice.response_data>true</jmeter.save.saveservice.response_data>
+        </propertiesUser>
+        
+        <!-- Ignorar errores para que CI/CD continúe -->
+        <ignoreResultFailures>true</ignoreResultFailures>
+    </configuration>
+</plugin>
+        </plugins>
+    </build>
+</project>

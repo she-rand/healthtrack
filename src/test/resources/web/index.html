@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthTrack - Sistema de Peso</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; }
+        input { padding: 8px; width: 200px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .result { margin-top: 20px; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HealthTrack - Registro de Peso</h1>
+        
+        <!-- Formulario de Registro -->
+        <form id="registro-form">
+            <div class="form-group">
+                <label for="nombre">Nombre:</label>
+                <input type="text" id="nombre" name="nombre" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="peso">Peso Inicial (kg):</label>
+                <input type="number" id="peso" name="peso" step="0.1" min="1" required>
+            </div>
+            
+            <button type="submit" id="registrar">Registrar Usuario</button>
+        </form>
+        
+        <!-- Sección de Actualización de Peso -->
+        <div id="actualizacion-seccion" style="display: none;">
+            <h2>Actualizar Peso</h2>
+            <div class="form-group">
+                <label for="nuevo-peso">Nuevo Peso (kg):</label>
+                <input type="number" id="nuevo-peso" step="0.1" min="1">
+            </div>
+            <button id="actualizar">Actualizar Peso</button>
+        </div>
+        
+        <!-- Resultados -->
+        <div id="resultado" class="result" style="display: none;"></div>
+        <div id="error" class="result error" style="display: none;"></div>
+        
+        <!-- Usuario Actual -->
+        <div id="usuario-info" style="display: none;">
+            <h3>Usuario Actual</h3>
+            <p>Nombre: <span id="usuario-nombre"></span></p>
+            <p>Peso: <span id="peso-actual"></span> kg</p>
+        </div>
+    </div>
+
+    <script>
+        let usuarioActual = null;
+        
+        document.getElementById('registro-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const nombre = document.getElementById('nombre').value;
+            const peso = parseFloat(document.getElementById('peso').value);
+            
+            if (nombre && peso > 0) {
+                // Simular creación de usuario (aquí iría la llamada al backend)
+                usuarioActual = {
+                    nombre: nombre,
+                    peso: peso
+                };
+                
+                mostrarUsuario();
+                mostrarMensaje('Usuario registrado exitosamente');
+                document.getElementById('actualizacion-seccion').style.display = 'block';
+            } else {
+                mostrarError('Por favor, complete todos los campos correctamente');
+            }
+        });
+        
+        document.getElementById('actualizar').addEventListener('click', function() {
+            const nuevoPeso = parseFloat(document.getElementById('nuevo-peso').value);
+            
+            if (nuevoPeso > 0 && usuarioActual) {
+                // AQUÍ ESTÁ EL ERROR: restamos 1kg en lugar de asignar el nuevo peso
+                usuarioActual.peso = usuarioActual.peso - 1;  // ERROR SIMULADO
+                
+                mostrarUsuario();
+                mostrarMensaje('Peso actualizado');
+                document.getElementById('nuevo-peso').value = '';
+            } else {
+                mostrarError('Ingrese un peso válido');
+            }
+        });
+        
+        function mostrarUsuario() {
+            document.getElementById('usuario-nombre').textContent = usuarioActual.nombre;
+            document.getElementById('peso-actual').textContent = usuarioActual.peso;
+            document.getElementById('usuario-info').style.display = 'block';
+        }
+        
+        function mostrarMensaje(mensaje) {
+            const resultado = document.getElementById('resultado');
+            resultado.textContent = mensaje;
+            resultado.style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+        }
+        
+        function mostrarError(mensaje) {
+            const error = document.getElementById('error');
+            error.textContent = mensaje;
+            error.style.display = 'block';
+            document.getElementById('resultado').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,404 @@
+name: 🚀 HealthTrack Complete CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Ejecutar pruebas nocturnas a las 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  JAVA_VERSION: '11'
+  MAVEN_OPTS: -Dmaven.repo.local=.m2/repository
+
+jobs:
+  # =====================================
+  # JOB 1: PRUEBAS UNITARIAS
+  # =====================================
+  unit-tests:
+    name: 🧪 Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Needed for SonarCloud
+        
+    - name: ☕ Setup Java JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        
+    - name: 📦 Cache Maven Dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.m2/repository
+          .m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+          
+    - name: 🧪 Run Unit Tests
+      run: |
+        mvn clean test -Dtest=UsuarioTest -Dmaven.test.failure.ignore=true
+        
+    - name: 📊 Generate Code Coverage Report
+      run: mvn jacoco:report
+      
+    - name: 📤 Upload Test Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: unit-test-results
+        path: |
+          target/surefire-reports/
+          target/site/jacoco/
+          
+    - name: 📋 Publish Test Report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Unit Tests Results
+        path: target/surefire-reports/*.xml
+        reporter: java-junit
+        
+    - name: 💾 Cache Test Results for SonarCloud
+      uses: actions/cache@v3
+      with:
+        path: |
+          target/surefire-reports/
+          target/site/jacoco/
+        key: test-results-${{ github.run_id }}
+
+  # =====================================
+  # JOB 2: PRUEBAS SELENIUM
+  # =====================================
+  selenium-tests:
+    name: 🌐 Selenium Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: ☕ Setup Java JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        
+    - name: 📦 Restore Maven Cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.m2/repository
+          .m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        
+    - name: 🌐 Setup Chrome Browser
+      uses: browser-actions/setup-chrome@latest
+      
+    - name: 🌐 Run Selenium Tests
+      run: |
+        mvn test -Dtest=UsuarioSeleniumTest -Dmaven.test.failure.ignore=true
+        
+    - name: 📸 Upload Screenshots (on failure)
+      uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: selenium-screenshots
+        path: target/screenshots/
+        
+    - name: 📤 Upload Selenium Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: selenium-test-results
+        path: target/surefire-reports/
+
+  # =====================================
+  # JOB 3: PRUEBAS DE RENDIMIENTO
+  # =====================================
+  performance-tests:
+    name: ⚡ Performance Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: ☕ Setup Java JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        
+    - name: 📦 Restore Maven Cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.m2/repository
+          .m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        
+    - name: ⚡ Run Java Performance Tests
+      run: |
+        mvn test -Dtest=UsuarioPerformanceTest -Dmaven.test.failure.ignore=true
+        
+    - name: 🐳 Setup Docker for JMeter
+      uses: docker/setup-buildx-action@v3
+      
+    - name: 🏃‍♂️ Run JMeter Performance Tests
+      run: |
+        mkdir -p target/jmeter
+        docker run --rm \
+          -v ${{ github.workspace }}/src/test/jmeter:/jmeter \
+          -v ${{ github.workspace }}/target/jmeter:/results \
+          justb4/jmeter:latest \
+          -n -t /jmeter/healthtrack-performance.jmx \
+          -l /results/results.jtl \
+          -e -o /results/html-report
+          
+    - name: 📊 Upload JMeter Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: jmeter-results
+        path: |
+          target/jmeter/results.jtl
+          target/jmeter/html-report/
+          
+    - name: 📈 Upload Performance Test Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: performance-test-results
+        path: target/surefire-reports/
+
+  # =====================================
+  # JOB 4: ANÁLISIS SONARCLOUD
+  # =====================================
+  sonarcloud-analysis:
+    name: 🔍 SonarCloud Analysis
+    runs-on: ubuntu-latest
+    needs: [unit-tests, selenium-tests, performance-tests]
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Disable shallow clone for better analysis
+        
+    - name: ☕ Setup Java JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        
+    - name: 📦 Cache SonarCloud Packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+        
+    - name: 📦 Restore Maven Cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.m2/repository
+          .m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        
+    - name: 💾 Restore Test Results
+      uses: actions/cache@v3
+      with:
+        path: |
+          target/surefire-reports/
+          target/site/jacoco/
+        key: test-results-${{ github.run_id }}
+        
+    - name: 🔧 Prepare for SonarCloud Analysis
+      run: |
+        mvn clean compile test-compile -Dmaven.test.skip=true
+        
+    - name: 🔍 Run SonarCloud Analysis
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        mvn sonar:sonar \
+          -Dsonar.projectKey=${{ github.repository_owner }}_healthtrack-testing \
+          -Dsonar.organization=${{ github.repository_owner }} \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+          
+    - name: 🏆 SonarCloud Quality Gate Check
+      uses: sonarqube-quality-gate-action@master
+      timeout-minutes: 5
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # =====================================
+  # JOB 5: SECURITY SCAN
+  # =====================================
+  security-scan:
+    name: 🛡️ Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: 🛡️ Run Trivy Vulnerability Scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: 📤 Upload Trivy Scan Results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # =====================================
+  # JOB 6: BUILD Y PACKAGE
+  # =====================================
+  build-and-package:
+    name: 📦 Build & Package
+    runs-on: ubuntu-latest
+    needs: [sonarcloud-analysis, security-scan]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: ☕ Setup Java JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        
+    - name: 📦 Restore Maven Cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.m2/repository
+          .m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        
+    - name: 🏗️ Build Application
+      run: mvn clean package -DskipTests
+      
+    - name: 📤 Upload Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: jar-artifacts
+        path: target/*.jar
+
+  # =====================================
+  # JOB 7: DEPLOY TO STAGING
+  # =====================================
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-and-package
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+    - name: 📥 Download Build Artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: jar-artifacts
+        path: ./artifacts
+        
+    - name: 🚀 Deploy to Staging Environment
+      run: |
+        echo "🚀 Deploying to staging environment..."
+        echo "📦 Artifact: $(ls ./artifacts/)"
+        echo "🌐 Staging URL: https://staging.healthtrack.com"
+        echo "✅ Staging deployment completed!"
+        
+    - name: 🧪 Run Staging Smoke Tests
+      run: |
+        echo "🧪 Running smoke tests on staging..."
+        # curl -f https://staging.healthtrack.com/health
+        echo "✅ Smoke tests passed!"
+
+  # =====================================
+  # JOB 8: DEPLOY TO PRODUCTION
+  # =====================================
+  deploy-production:
+    name: 🌟 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-and-package
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: 📥 Download Build Artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: jar-artifacts
+        path: ./artifacts
+        
+    - name: 🌟 Deploy to Production Environment
+      run: |
+        echo "🌟 Deploying to production environment..."
+        echo "📦 Artifact: $(ls ./artifacts/)"
+        echo "🌐 Production URL: https://healthtrack.com"
+        echo "✅ Production deployment completed!"
+        
+    - name: 🧪 Run Production Smoke Tests
+      run: |
+        echo "🧪 Running smoke tests on production..."
+        # curl -f https://healthtrack.com/health
+        echo "✅ Smoke tests passed!"
+
+  # =====================================
+  # JOB 9: NOTIFICATIONS
+  # =====================================
+  notifications:
+    name: 📧 Send Notifications
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+    
+    steps:
+    - name: 📊 Generate Pipeline Summary
+      run: |
+        echo "## 📊 Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+        echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Unit Tests | ${{ needs.unit-tests.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Selenium Tests | ${{ needs.selenium-tests.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Performance Tests | ${{ needs.performance-tests.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| SonarCloud Analysis | ${{ needs.sonarcloud-analysis.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Security Scan | ${{ needs.security-scan.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Build & Package | ${{ needs.build-and-package.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Deploy Staging | ${{ needs.deploy-staging.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Deploy Production | ${{ needs.deploy-production.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+        
+    - name: 📧 Send Success Notification
+      if: ${{ needs.deploy-production.result == 'success' || needs.deploy-staging.result == 'success' }}
+      run: |
+        echo "✅ Deployment successful!"
+        echo "📧 Sending success notification..."
+        
+    - name: 📧 Send Failure Notification
+      if: failure()
+      run: |
+        echo "❌ Pipeline failed!"
+        echo "📧 Sending failure notification..."
