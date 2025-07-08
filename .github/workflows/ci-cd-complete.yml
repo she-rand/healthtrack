@@ -51,7 +51,7 @@ jobs:
       run: mvn jacoco:report
       
     - name: 📤 Upload Test Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: unit-test-results
@@ -280,7 +280,7 @@ jobs:
       uses: actions/checkout@v4
       
     - name: ☕ Setup Java JDK
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
@@ -297,7 +297,7 @@ jobs:
       run: mvn clean package -DskipTests
       
     - name: 📤 Upload Build Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: jar-artifacts
         path: target/*.jar
@@ -314,7 +314,7 @@ jobs:
     
     steps:
     - name: 📥 Download Build Artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: jar-artifacts
         path: ./artifacts
@@ -344,7 +344,7 @@ jobs:
     
     steps:
     - name: 📥 Download Build Artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: jar-artifacts
         path: ./artifacts
