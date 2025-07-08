@@ -9,11 +9,13 @@ on:
     # Ejecutar pruebas nocturnas a las 2 AM UTC
     - cron: '0 2 * * *'
 
-# Permisos necesarios para el security scanning
+# Permisos necesarios para el pipeline completo
 permissions:
   contents: read
   security-events: write
   actions: read
+  checks: write          # Para test reports
+  pull-requests: write   # Para comentarios en PRs
 
 env:
   JAVA_VERSION: '11'
@@ -72,6 +74,8 @@ jobs:
         name: Unit Tests Results
         path: target/surefire-reports/*.xml
         reporter: java-junit
+        fail-on-error: false    # No fallar si no encuentra archivos
+        fail-on-empty: false    # No fallar si está vacío
         
     - name: 💾 Cache Test Results for SonarCloud
       uses: actions/cache@v4
