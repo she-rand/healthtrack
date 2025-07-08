@@ -18,7 +18,7 @@ permissions:
   pull-requests: write   # Para comentarios en PRs
 
 env:
-  JAVA_VERSION: '11'
+  JAVA_VERSION: '17'  # Actualizado a Java 17
   MAVEN_OPTS: -Dmaven.repo.local=.m2/repository
 
 jobs:
@@ -206,10 +206,10 @@ jobs:
       with:
         fetch-depth: 0  # Disable shallow clone for better analysis
         
-    - name: ☕ Setup Java JDK
+    - name: ☕ Setup Java JDK for SonarCloud
       uses: actions/setup-java@v4
       with:
-        java-version: ${{ env.JAVA_VERSION }}
+        java-version: '17'  # Java 17 solo para SonarCloud
         distribution: 'temurin'
         
     - name: 📦 Cache SonarCloud Packages
