@@ -14,13 +14,15 @@ mvn test
 
 # Generar reporte de cobertura
 mvn clean test jacoco:report
+```
+
 
 # 🏥 HealthTrack Testing Project
 
-[![CI/CD Pipeline](https://github.com/TU_USUARIO/healthtrack-testing/actions/workflows/ci-cd-complete.yml/badge.svg)](https://github.com/TU_USUARIO/healthtrack-testing/actions/workflows/ci-cd-complete.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=TU_USUARIO_healthtrack-testing&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=TU_USUARIO_healthtrack-testing)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=TU_USUARIO_healthtrack-testing&metric=coverage)](https://sonarcloud.io/summary/new_code?id=TU_USUARIO_healthtrack-testing)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=TU_USUARIO_healthtrack-testing&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=TU_USUARIO_healthtrack-testing)
+[![CI/CD Pipeline](https://github.com/she-rand/healthtrack/actions/workflows/ci-cd-complete.yml/badge.svg)](https://github.com/she-rand/healthtrack/actions/workflows/ci-cd-complete.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=she-rand_healthtrack-testing&metric=alert_status)](https://sonarcloud.io/summary/overall?id=she-rand_healthtrack-testing&branch=master)
+[![Coverage](https://sonarcloud.io/component_measures?id=she-rand_healthtrack-testing&metric=coverage&view=list)](https://sonarcloud.io/component_measures?id=she-rand_healthtrack-testing&metric=coverage&view=list)
+[![Security Rating](https://sonarcloud.io/component_measures?metric=security_review_rating&view=list&id=she-rand_healthtrack-testing)](https://sonarcloud.io/component_measures?metric=security_review_rating&view=list&id=she-rand_healthtrack-testing)
 
 ## 🚀 Funcionalidades del Pipeline
 
@@ -60,6 +62,8 @@ mvn sonar:sonar -Dsonar.token=TU_TOKEN
 
 # Pipeline completo local
 mvn clean verify
+```
+
 
 ## 🚀 PARTE 5: Despliegue y Prueba
 
@@ -81,3 +85,4 @@ git commit -m "feat: Add complete CI/CD pipeline with SonarCloud and JMeter
 
 # Push para disparar el pipeline
 git push origin main
+```
