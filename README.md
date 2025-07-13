@@ -45,14 +45,42 @@ mvn clean test jacoco:report
 - 🛡️ **Seguridad**: Trivy + GitHub Security
 - 🔍 **Calidad**: SonarCloud Quality Gate
 
+## Estructura del proyecto
+healthtrack/
+├── src/
+│   ├── main/java/com/ejemplo/
+│   │   ├── Usuario.java (contiene el error)
+│   │   └── Main.java (demuestra el error)
+│   └── test/java/com/ejemplo/
+│       └── UsuarioTest.java (documenta el error)
+├── performance-tests/
+├── selenium-tests/
+└── pom.xml
+
 ## 🛠️ Comandos Locales
 
 ```bash
+# Descargar dependencias (primera vez puede tardar)
+mvn clean compile
+
 # Ejecutar todas las pruebas
 mvn clean test
 
 # Generar reportes de cobertura
 mvn jacoco:report
+
+# El reporte se genera en target/site/jacoco/index.html
+ls -la target/site/jacoco/
+
+# Abrir el informe en el navegador
+# En Mac:
+open target/site/jacoco/index.html
+
+# En Linux:
+xdg-open target/site/jacoco/index.html
+
+# En Windows:
+start target/site/jacoco/index.html
 
 # Análisis SonarCloud local
 mvn sonar:sonar -Dsonar.token=TU_TOKEN
