@@ -287,16 +287,50 @@ jobs:
         echo "5. 🏗️ Main classes verification:"
         find target/classes -name "*.class" | head -5
             
-        - name: 🔍 Run SonarCloud Analysis
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          run: |
-            mvn sonar:sonar \
-              -Dsonar.projectKey=${{ github.repository_owner }}_healthtrack \
-              -Dsonar.organization=${{ github.repository_owner }} \
-              -Dsonar.host.url=https://sonarcloud.io \
-              -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+    - name: 🔍 Run SonarCloud Analysis
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        echo "🔍 Starting SonarCloud analysis..."
+        mvn sonar:sonar \
+          -Dsonar.projectKey=she-rand_healthtrack \
+          -Dsonar.organization=she-rand \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.token="${SONAR_TOKEN}" \
+          -Dsonar.sources=src/main/java \
+          -Dsonar.tests=src/test/java \
+          -Dsonar.java.binaries=target/classes \
+          -Dsonar.java.test.binaries=target/test-classes \
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+          -Dsonar.junit.reportPaths=target/surefire-reports
+
+    - name: 🔍 Quick XML Coverage Check
+      run: |
+        echo "🔍 QUICK COVERAGE CHECK"
+        echo "======================"
+        
+        if [ -f "target/site/jacoco/jacoco.xml" ]; then
+          echo "✅ XML file exists"
+          
+          # Contar líneas con coverage data
+          COVERAGE_LINES=$(grep -c 'covered="[1-9]' target/site/jacoco/jacoco.xml || echo "0")
+          echo "📊 Lines with coverage > 0: $COVERAGE_LINES"
+          
+          # Buscar el total de instrucciones
+          TOTAL_INSTRUCTIONS=$(grep 'type="INSTRUCTION"' target/site/jacoco/jacoco.xml | head -1)
+          echo "📈 Instruction coverage: $TOTAL_INSTRUCTIONS"
+          
+          # Verificar si hay datos de la clase Usuario
+          USER_CLASS=$(grep -c 'class name="com/ejemplo/Usuario"' target/site/jacoco/jacoco.xml || echo "0")
+          echo "👤 Usuario class found: $([ $USER_CLASS -gt 0 ] && echo 'YES' || echo 'NO')"
+          
+          # Mostrar tamaño del archivo
+          echo "📄 XML file size: $(du -h target/site/jacoco/jacoco.xml)"
+          
+        else
+          echo "❌ No XML file found"
+        fi
       
     - name: 🔧 Verify SonarCloud Configuration
       run: |
