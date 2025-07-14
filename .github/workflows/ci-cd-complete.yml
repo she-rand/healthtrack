@@ -317,14 +317,23 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
-        echo "Starting SonarCloud analysis..."
+        echo "🔍 Starting SonarCloud analysis..."
+        
+        # Verificar que el token existe
+        if [ -z "$SONAR_TOKEN" ]; then
+          echo "❌ SONAR_TOKEN is not set"
+          exit 1
+        fi
+        
+        # Ejecutar análisis SonarCloud
         mvn sonar:sonar \
-        -Dsonar.projectKey=she-rand_healthtrack \
-        -Dsonar.organization=she-rand \
-        -Dsonar.host.url=https://sonarcloud.io \
-        -Dsonar.token="${SONAR_TOKEN}" \
-        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-        echo "Analysis completed"
+          -Dsonar.projectKey=she-rand_healthtrack \
+          -Dsonar.organization=she-rand \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.token="$SONAR_TOKEN" \
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+          
+        echo "✅ SonarCloud analysis completed successfully"
                   
   # =====================================
   # JOB 5: SECURITY SCAN
