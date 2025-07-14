@@ -20,9 +20,9 @@ mvn clean test jacoco:report
 # 🏥 HealthTrack Testing Project
 
 [![CI/CD Pipeline](https://github.com/she-rand/healthtrack/actions/workflows/ci-cd-complete.yml/badge.svg)](https://github.com/she-rand/healthtrack/actions/workflows/ci-cd-complete.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=she-rand_healthtrack-testing&metric=alert_status)](https://sonarcloud.io/summary/overall?id=she-rand_healthtrack-testing&branch=master)
-[![Coverage](https://sonarcloud.io/component_measures?id=she-rand_healthtrack-testing&metric=coverage&view=list)](https://sonarcloud.io/component_measures?id=she-rand_healthtrack-testing&metric=coverage&view=list)
-[![Security Rating](https://sonarcloud.io/component_measures?metric=security_review_rating&view=list&id=she-rand_healthtrack-testing)](https://sonarcloud.io/component_measures?metric=security_review_rating&view=list&id=she-rand_healthtrack-testing)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=she-rand_healthtrack&metric=alert_status)](https://sonarcloud.io/summary/overall?id=she-rand_healthtrack&branch=master)
+[![Coverage](https://sonarcloud.io/component_measures?id=she-rand_healthtrack&metric=coverage&view=list)](https://sonarcloud.io/component_measures?id=she-rand_healthtrack&metric=coverage&view=list)
+[![Security Rating](https://sonarcloud.io/component_measures?metric=security_review_rating&view=list&id=she-rand_healthtrack)](https://sonarcloud.io/component_measures?metric=security_review_rating&view=list&id=she-rand_healthtrack)
 
 ## 🚀 Funcionalidades del Pipeline
 
@@ -90,7 +90,7 @@ mvn test -Dtest=UsuarioSeleniumTest
 
 # Para probar SonarCloud localmente (una vez configurado)
 mvn clean verify sonar:sonar \
-  -Dsonar.projectKey=tu-usuario_healthtrack-testing \
+  -Dsonar.projectKey=tu-usuario_healthtrack \
   -Dsonar.organization=tu-organizacion \
   -Dsonar.host.url=https://sonarcloud.io \
   -Dsonar.token=TU_TOKEN_AQUI
@@ -98,7 +98,7 @@ mvn clean verify sonar:sonar \
 # Ejecutar SonarCloud ignorando fallos de pruebas
 mvn clean test jacoco:report sonar:sonar \
   -Dmaven.test.failure.ignore=true \
-  -Dsonar.projectKey=healthtrack-testing \
+  -Dsonar.projectKey=healthtrack \
   -Dsonar.organization=tu-organizacion \
   -Dsonar.host.url=https://sonarcloud.io \
   -Dsonar.token=TU_TOKEN_AQUI
