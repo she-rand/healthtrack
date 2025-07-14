@@ -232,20 +232,91 @@ jobs:
       run: |
         mvn clean test jacoco:report -Dmaven.test.failure.ignore=true
         
-    - name: 📊 Verify Coverage Files Generated
+    - name: 📊 COMPLETE Coverage Debug for SonarCloud
       run: |
-        # Verificación de que se generaron los archivos
+        echo "🔍 COMPREHENSIVE COVERAGE DEBUG"
+        echo "==============================="
         
-    - name: 🔍 Run SonarCloud Analysis
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        echo "1. 📁 Generated files:"
+        find target -name "*jacoco*" -type f
+        
+        echo ""
+        echo "2. 📄 JaCoCo XML Report analysis:"
+        if [ -f "target/site/jacoco/jacoco.xml" ]; then
+          echo "✅ jacoco.xml exists: $(ls -lh target/site/jacoco/jacoco.xml)"
+          echo ""
+          echo "📋 XML Headers:"
+          head -10 target/site/jacoco/jacoco.xml
+          
+          echo ""
+          echo "🔍 Coverage counters found:"
+          grep -E '<counter type="(INSTRUCTION|LINE|BRANCH)"' target/site/jacoco/jacoco.xml
+          
+          echo ""
+          echo "📊 Package information:"
+          grep '<package name=' target/site/jacoco/jacoco.xml
+          
+          echo ""
+          echo "👤 Classes with coverage:"
+          grep '<class name=' target/site/jacoco/jacoco.xml
+          
+          echo ""
+          echo "🎯 Specific search for Usuario class:"
+          grep -A 5 -B 5 'Usuario' target/site/jacoco/jacoco.xml || echo "Usuario class not found in coverage"
+          
+          echo ""
+          echo "📈 Coverage summary from XML:"
+          # Buscar el total de coverage
+          grep -A 1 '</report>' target/site/jacoco/jacoco.xml | head -5
+          
+        else
+          echo "❌ jacoco.xml NOT found"
+        fi
+        
+        echo ""
+        echo "3. 📁 Complete target structure:"
+        ls -la target/
+        ls -la target/site/ 2>/dev/null || echo "No site directory"
+        ls -la target/site/jacoco/ 2>/dev/null || echo "No jacoco directory"
+        
+        echo ""
+        echo "4. 🧪 Test classes verification:"
+        find target/test-classes -name "*.class" | head -5
+        
+        echo ""
+        echo "5. 🏗️ Main classes verification:"
+        find target/classes -name "*.class" | head -5
+            
+        - name: 🔍 Run SonarCloud Analysis
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          run: |
+            mvn sonar:sonar \
+              -Dsonar.projectKey=${{ github.repository_owner }}_healthtrack \
+              -Dsonar.organization=${{ github.repository_owner }} \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+      
+    - name: 🔧 Verify SonarCloud Configuration
       run: |
-        mvn sonar:sonar \
-          -Dsonar.projectKey=${{ github.repository_owner }}_healthtrack \
-          -Dsonar.organization=${{ github.repository_owner }} \
-          -Dsonar.host.url=https://sonarcloud.io \
-          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+        echo "🔧 SONARCLOUD CONFIGURATION CHECK"
+        echo "================================="
+        
+        echo "📋 sonar-project.properties content:"
+        cat sonar-project.properties
+        
+        echo ""
+        echo "🎯 Key paths verification:"
+        echo "Sources exist: $([ -d 'src/main/java' ] && echo 'YES' || echo 'NO')"
+        echo "Tests exist: $([ -d 'src/test/java' ] && echo 'YES' || echo 'NO')"
+        echo "JaCoCo XML exists: $([ -f 'target/site/jacoco/jacoco.xml' ] && echo 'YES' || echo 'NO')"
+        echo "Surefire reports exist: $([ -d 'target/surefire-reports' ] && echo 'YES' || echo 'NO')"
+        
+        echo ""
+        echo "🔍 Environment variables:"
+        echo "SONAR_TOKEN: $([ ! -z '$SONAR_TOKEN' ] && echo 'SET' || echo 'NOT SET')"
+        echo "GITHUB_TOKEN: $([ ! -z '$GITHUB_TOKEN' ] && echo 'SET' || echo 'NOT SET')"
 
   # =====================================
   # JOB 5: SECURITY SCAN
