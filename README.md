@@ -85,6 +85,33 @@ start target/site/jacoco/index.html
 # Análisis SonarCloud local
 mvn sonar:sonar -Dsonar.token=TU_TOKEN
 
+# Ejecutar las pruebas de Selenium
+mvn test -Dtest=UsuarioSeleniumTest
+
+# Para probar SonarCloud localmente (una vez configurado)
+mvn clean verify sonar:sonar \
+  -Dsonar.projectKey=tu-usuario_healthtrack-testing \
+  -Dsonar.organization=tu-organizacion \
+  -Dsonar.host.url=https://sonarcloud.io \
+  -Dsonar.token=TU_TOKEN_AQUI
+
+# Ejecutar SonarCloud ignorando fallos de pruebas
+mvn clean test jacoco:report sonar:sonar \
+  -Dmaven.test.failure.ignore=true \
+  -Dsonar.projectKey=healthtrack-testing \
+  -Dsonar.organization=tu-organizacion \
+  -Dsonar.host.url=https://sonarcloud.io \
+  -Dsonar.token=TU_TOKEN_AQUI
+
+ # Ejecutar con archivo válido
+docker run --rm \
+  -v $(pwd)/src/test/jmeter:/jmeter \
+  -v $(pwd)/target/jmeter:/results \
+  justb4/jmeter:latest \
+  -n -t /jmeter/healthtrack-performance.jmx \
+  -l /results/results.jtl \
+  -e -o /results/html-report 
+
 # Pruebas de rendimiento JMeter
 ./run-jmeter.sh
 
