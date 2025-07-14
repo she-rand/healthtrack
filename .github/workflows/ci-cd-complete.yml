@@ -287,12 +287,45 @@ jobs:
         echo "5. 🏗️ Main classes verification:"
         find target/classes -name "*.class" | head -5
             
-    - name: 🔍 Run SonarCloud Analysis
+    - name: 🔧 Format JaCoCo XML for SonarCloud
+      run: |
+        echo "🔧 Formatting JaCoCo XML for better SonarCloud compatibility..."
+        
+        # Verificar que existe
+        if [ -f "target/site/jacoco/jacoco.xml" ]; then
+          echo "✅ Original XML size: $(du -h target/site/jacoco/jacoco.xml)"
+          
+          # Hacer backup
+          cp target/site/jacoco/jacoco.xml target/site/jacoco/jacoco.xml.backup
+          
+          # Formatear XML (si xmllint está disponible)
+          if command -v xmllint >/dev/null 2>&1; then
+            xmllint --format target/site/jacoco/jacoco.xml.backup > target/site/jacoco/jacoco.xml
+            echo "✅ XML formatted with xmllint"
+          else
+            echo "ℹ️  xmllint not available, using original XML"
+          fi
+          
+          echo "✅ Final XML size: $(du -h target/site/jacoco/jacoco.xml)"
+        else
+          echo "❌ JaCoCo XML not found"
+          exit 1
+        fi
+
+    - name: 🔍 Run SonarCloud Analysis (With Explicit Coverage)
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
-        echo "🔍 Starting SonarCloud analysis..."
+        echo "🔍 Starting SonarCloud analysis with verified coverage data..."
+        
+        # Verificar prerequisites
+        echo "📊 Coverage verification:"
+        echo "   JaCoCo XML exists: $([ -f 'target/site/jacoco/jacoco.xml' ] && echo 'YES' || echo 'NO')"
+        echo "   XML file size: $(du -h target/site/jacoco/jacoco.xml 2>/dev/null || echo 'NOT FOUND')"
+        echo "   Classes in XML: $(grep -c 'class name=' target/site/jacoco/jacoco.xml 2>/dev/null || echo '0')"
+        
+        # Ejecutar SonarCloud con paths absolutos
         mvn sonar:sonar \
           -Dsonar.projectKey=she-rand_healthtrack \
           -Dsonar.organization=she-rand \
@@ -303,54 +336,59 @@ jobs:
           -Dsonar.java.binaries=target/classes \
           -Dsonar.java.test.binaries=target/test-classes \
           -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-          -Dsonar.junit.reportPaths=target/surefire-reports
+          -Dsonar.junit.reportPaths=target/surefire-reports \
+          -Dsonar.scm.disabled=false \
+          -Dsonar.java.source=11 \
+          -Dsonar.verbose=true
+        
+        echo "✅ SonarCloud analysis completed"
 
-    - name: 🔍 Quick XML Coverage Check
-      run: |
-        echo "🔍 QUICK COVERAGE CHECK"
-        echo "======================"
-        
-        if [ -f "target/site/jacoco/jacoco.xml" ]; then
-          echo "✅ XML file exists"
+        - name: 🔍 Quick XML Coverage Check
+          run: |
+            echo "🔍 QUICK COVERAGE CHECK"
+            echo "======================"
+            
+            if [ -f "target/site/jacoco/jacoco.xml" ]; then
+              echo "✅ XML file exists"
+              
+              # Contar líneas con coverage data
+              COVERAGE_LINES=$(grep -c 'covered="[1-9]' target/site/jacoco/jacoco.xml || echo "0")
+              echo "📊 Lines with coverage > 0: $COVERAGE_LINES"
+              
+              # Buscar el total de instrucciones
+              TOTAL_INSTRUCTIONS=$(grep 'type="INSTRUCTION"' target/site/jacoco/jacoco.xml | head -1)
+              echo "📈 Instruction coverage: $TOTAL_INSTRUCTIONS"
+              
+              # Verificar si hay datos de la clase Usuario
+              USER_CLASS=$(grep -c 'class name="com/ejemplo/Usuario"' target/site/jacoco/jacoco.xml || echo "0")
+              echo "👤 Usuario class found: $([ $USER_CLASS -gt 0 ] && echo 'YES' || echo 'NO')"
+              
+              # Mostrar tamaño del archivo
+              echo "📄 XML file size: $(du -h target/site/jacoco/jacoco.xml)"
+              
+            else
+              echo "❌ No XML file found"
+            fi
           
-          # Contar líneas con coverage data
-          COVERAGE_LINES=$(grep -c 'covered="[1-9]' target/site/jacoco/jacoco.xml || echo "0")
-          echo "📊 Lines with coverage > 0: $COVERAGE_LINES"
-          
-          # Buscar el total de instrucciones
-          TOTAL_INSTRUCTIONS=$(grep 'type="INSTRUCTION"' target/site/jacoco/jacoco.xml | head -1)
-          echo "📈 Instruction coverage: $TOTAL_INSTRUCTIONS"
-          
-          # Verificar si hay datos de la clase Usuario
-          USER_CLASS=$(grep -c 'class name="com/ejemplo/Usuario"' target/site/jacoco/jacoco.xml || echo "0")
-          echo "👤 Usuario class found: $([ $USER_CLASS -gt 0 ] && echo 'YES' || echo 'NO')"
-          
-          # Mostrar tamaño del archivo
-          echo "📄 XML file size: $(du -h target/site/jacoco/jacoco.xml)"
-          
-        else
-          echo "❌ No XML file found"
-        fi
-      
-    - name: 🔧 Verify SonarCloud Configuration
-      run: |
-        echo "🔧 SONARCLOUD CONFIGURATION CHECK"
-        echo "================================="
-        
-        echo "📋 sonar-project.properties content:"
-        cat sonar-project.properties
-        
-        echo ""
-        echo "🎯 Key paths verification:"
-        echo "Sources exist: $([ -d 'src/main/java' ] && echo 'YES' || echo 'NO')"
-        echo "Tests exist: $([ -d 'src/test/java' ] && echo 'YES' || echo 'NO')"
-        echo "JaCoCo XML exists: $([ -f 'target/site/jacoco/jacoco.xml' ] && echo 'YES' || echo 'NO')"
-        echo "Surefire reports exist: $([ -d 'target/surefire-reports' ] && echo 'YES' || echo 'NO')"
-        
-        echo ""
-        echo "🔍 Environment variables:"
-        echo "SONAR_TOKEN: $([ ! -z '$SONAR_TOKEN' ] && echo 'SET' || echo 'NOT SET')"
-        echo "GITHUB_TOKEN: $([ ! -z '$GITHUB_TOKEN' ] && echo 'SET' || echo 'NOT SET')"
+        - name: 🔧 Verify SonarCloud Configuration
+          run: |
+            echo "🔧 SONARCLOUD CONFIGURATION CHECK"
+            echo "================================="
+            
+            echo "📋 sonar-project.properties content:"
+            cat sonar-project.properties
+            
+            echo ""
+            echo "🎯 Key paths verification:"
+            echo "Sources exist: $([ -d 'src/main/java' ] && echo 'YES' || echo 'NO')"
+            echo "Tests exist: $([ -d 'src/test/java' ] && echo 'YES' || echo 'NO')"
+            echo "JaCoCo XML exists: $([ -f 'target/site/jacoco/jacoco.xml' ] && echo 'YES' || echo 'NO')"
+            echo "Surefire reports exist: $([ -d 'target/surefire-reports' ] && echo 'YES' || echo 'NO')"
+            
+            echo ""
+            echo "🔍 Environment variables:"
+            echo "SONAR_TOKEN: $([ ! -z '$SONAR_TOKEN' ] && echo 'SET' || echo 'NOT SET')"
+            echo "GITHUB_TOKEN: $([ ! -z '$GITHUB_TOKEN' ] && echo 'SET' || echo 'NOT SET')"
 
   # =====================================
   # JOB 5: SECURITY SCAN
